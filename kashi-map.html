@@ -1,0 +1,536 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>喀什非物质文化遗产地图</title>
+    <!-- 高德地图API -->
+    <script>
+        window._AMapSecurityConfig = {
+            securityJsCode: '028106f0bd2ce7235cd24e623cc309e9',
+        }
+    </script>
+    <script src="https://webapi.amap.com/maps?v=2.0&key=45d6ffc7dda078a584833e779298bc3e"></script>
+    <!-- 高德地图UI库 -->
+    <script src="https://webapi.amap.com/ui/1.1/main.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+            background: linear-gradient(135deg,#f5f7fa 0%,#c3cfe2 100%);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(90deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 20px 30px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+            .header h1 {
+                font-size: 28px;
+                margin-bottom: 8px;
+                text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+            }
+
+            .header p {
+                font-size: 16px;
+                opacity: 0.9;
+                max-width: 800px;
+            }
+
+        .container {
+            display: flex;
+            height: calc(100vh-200px);
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .map-container {
+            flex: 3;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            position: relative;
+            min-height: 400px;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .sidebar {
+            flex: 1;
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            max-width: 400px;
+        }
+
+            .sidebar h2 {
+                color: #2a5298;
+                margin-bottom: 20px;
+                padding-bottom: 10px;
+                border-bottom: 2px solid #eaeaea;
+            }
+
+        .legend {
+            margin-bottom: 25px;
+        }
+
+            .legend h3 {
+                font-size: 18px;
+                margin-bottom: 15px;
+                color: #333;
+            }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+
+            .legend-item:hover {
+                background-color: #f8f9fa;
+            }
+
+        .color-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 12px;
+            border: 2px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .non-heritage-list {
+            margin-top: 25px;
+        }
+
+            .non-heritage-list h3 {
+                font-size: 18px;
+                margin-bottom: 15px;
+                color: #333;
+            }
+
+        .heritage-item {
+            padding: 12px 15px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #2a5298;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+            .heritage-item:hover {
+                background-color: #e9ecef;
+                transform: translateX(5px);
+            }
+
+            .heritage-item.active {
+                background-color: #e3f2fd;
+                border-left-color: #1e88e5;
+            }
+
+        .heritage-name {
+            font-weight: bold;
+            color: #1a237e;
+            margin-bottom: 5px;
+        }
+
+        .heritage-category {
+            font-size: 14px;
+            color: #666;
+            background-color: #e8eaf6;
+            padding: 2px 8px;
+            border-radius: 10px;
+            display: inline-block;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 15px;
+            color: #666;
+            font-size: 14px;
+            background-color: #f8f9fa;
+            border-top: 1px solid #eaeaea;
+        }
+
+        .info-window {
+            max-width: 300px;
+        }
+
+        .info-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1a237e;
+            margin-bottom: 8px;
+        }
+
+        .info-category {
+            display: inline-block;
+            background-color: #e8eaf6;
+            color: #1a237e;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+
+        .info-description {
+            font-size: 14px;
+            line-height: 1.5;
+            color: #444;
+        }
+
+        .info-location {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #666;
+        }
+
+            .info-location i {
+                margin-right: 5px;
+                color: #1e88e5;
+            }
+
+        @media (max-width: 1024px) {
+            .container {
+                flex-direction: column;
+                height: auto;
+            }
+
+            .map-container {
+                height: 500px;
+            }
+
+            .sidebar {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>喀什非物质文化遗产地图</h1>
+        <p>探索喀什地区丰富的非物质文化遗产，点击地图标记或右侧列表查看详细信息</p>
+    </div>
+
+    <div class="container">
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
+
+        <div class="sidebar">
+            <h2>非遗图例</h2>
+
+            <div class="legend">
+                <h3>分类说明</h3>
+                <div class="legend-item">
+                    <div class="color-dot" style="background-color: #8B4513;"></div>
+                    <span>手工艺类</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-dot" style="background-color: #D2691E;"></div>
+                    <span>表演艺术类</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-dot" style="background-color: #2E8B57;"></div>
+                    <span>民俗活动类</span>
+                </div>
+            </div>
+
+            <div class="non-heritage-list">
+                <h3>非遗项目列表</h3>
+                <div id="heritage-list">
+                    <!-- 项目列表将通过JavaScript动态生成 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>© 2023 喀什非遗文化地图 | 数据来源：《喀什非遗》文档 | 使用高德地图API</p>
+    </div>
+
+    <script>
+        // 等待页面完全加载
+        window.onload = function () {
+            // 添加延迟，确保DOM完全渲染
+            setTimeout(function () {
+                // 等待高德地图UI库加载完成
+                AMapUI.loadUI(['overlay/SimpleInfoWindow'], function (SimpleInfoWindow) {
+                    // 初始化地图
+                    var map = new AMap.Map('map', {
+                        zoom: 10,
+                        center: [76.13, 39.47], // 喀什市中心
+                        mapStyle: 'amap://styles/light', // 使用浅色主题
+                        features: ['bg', 'road', 'building'], // 只显示背景、道路和建筑
+                        viewMode: '2D' // 添加2D模式
+                    });
+
+                    // 根据文档选择的10个非遗点数据
+                    var heritagePoints = [
+                        {
+                            id: 1,
+                            name: "维吾尔族模制法土陶烧制技艺",
+                            category: "手工艺",
+                            categoryColor: "#8B4513",
+                            description: "喀什市古则尔社区阔子其亚尔比西居民区、喀什市老城土陶巷（阔孜其亚贝希巷）、喀什市高台民居'高崖上的土陶人家'、英吉沙县芒辛镇恰克日库依村（土陶村）",
+                            position: [76.1398, 39.4702], // 喀什市老城土陶巷
+                            icon: "https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png"
+                        },
+                        {
+                            id: 2,
+                            name: "喀什维吾尔族铜器制作技艺",
+                            category: "手工艺",
+                            categoryColor: "#8B4513",
+                            description: "核心区在喀什古城吾斯塘博依路（职人街）、铜器巴扎、多集中在库木达尔瓦扎路手工艺作坊一条街。辐射区包括喀什周边的疏附、疏勒、莎车、英吉沙等县。",
+                            position: [76.1412, 39.4695], // 喀什古城吾斯塘博依路
+                            icon: "https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png"
+                        },
+                        {
+                            id: 3,
+                            name: "英吉沙小刀",
+                            category: "手工艺",
+                            categoryColor: "#8B4513",
+                            description: "原产地新疆喀什地区英吉沙县，核心发源地芒辛镇喀拉巴什兰干村（小刀村）。技艺传播至和田、莎车、喀什、库车等地。",
+                            position: [76.1385, 38.9157], // 英吉沙县芒辛镇
+                            icon: "https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png"
+                        },
+                        {
+                            id: 4,
+                            name: "木戳印花",
+                            category: "手工艺",
+                            categoryColor: "#8B4513",
+                            description: "核心区在英吉沙县芒辛镇喀拉巴什粮台村，是模戳印花布的故里；英吉沙县国学书院也是该技艺的展示与传承核心点位。",
+                            position: [76.1423, 38.9215], // 英吉沙县芒辛镇
+                            icon: "https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png"
+                        },
+                        {
+                            id: 5,
+                            name: "维吾尔族乐器制作",
+                            category: "手工艺",
+                            categoryColor: "#8B4513",
+                            description: "两大核心村：疏附县吾库萨克镇托万克吾库萨克村（中国新疆民族乐器村）和阿克苏地区新和县加依村。技艺覆盖喀什、阿克苏、和田等维吾尔族聚居区。",
+                            position: [75.8523, 39.4015], // 疏附县吾库萨克镇
+                            icon: "https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png"
+                        },
+                        {
+                            id: 6,
+                            name: "艾德莱丝绸",
+                            category: "手工艺",
+                            categoryColor: "#8B4513",
+                            description: "主要生产地为喀什市、莎车县。技艺辐射区包括疏附、疏勒等喀什周边县域有少量艾德莱丝绸的制作与加工工坊。",
+                            position: [76.1395, 39.4688], // 喀什市
+                            icon: "https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png"
+                        },
+                        {
+                            id: 7,
+                            name: "维吾尔族花帽",
+                            category: "手工艺",
+                            categoryColor: "#8B4513",
+                            description: "核心产地在喀什市，销售与传承聚集区在喀什市古城内的手工艺街区。英吉沙、莎车等喀什下辖县有本土化花帽制作，纹样融入当地民俗特色。",
+                            position: [76.1402, 39.4691], // 喀什市古城
+                            icon: "https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png"
+                        },
+                        {
+                            id: 8,
+                            name: "维吾尔族建筑装饰艺术",
+                            category: "手工艺",
+                            categoryColor: "#8B4513",
+                            description: "核心分布区为喀什市、莎车县。典型代表包括喀什古城的生土建筑装饰和莎车县的传统民居与宗教建筑装饰。",
+                            position: [76.1405, 39.4698], // 喀什古城
+                            icon: "https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png"
+                        },
+                        {
+                            id: 9,
+                            name: "维吾尔族木卡姆艺术",
+                            category: "表演艺术",
+                            categoryColor: "#D2691E",
+                            description: "新疆喀什地区莎车县是十二木卡姆的发源地与核心传承地，被称为'十二木卡姆的故乡'。主要流传区包括麦盖提县、巴楚县。",
+                            position: [77.2415, 38.4158], // 莎车县
+                            icon: "https://webapi.amap.com/theme/v1.3/markers/n/mark_r.png"
+                        },
+                        {
+                            id: 10,
+                            name: "麦西热甫",
+                            category: "民俗活动",
+                            categoryColor: "#2E8B57",
+                            description: "核心传承地为莎车县，是麦西热甫与十二木卡姆融合传承的核心区域。喀什市、疏勒县、英吉沙县等喀什地区维吾尔族聚居区均有常态化的麦西热甫民俗活动。",
+                            position: [77.2420, 38.4165], // 莎车县
+                            icon: "https://webapi.amap.com/theme/v1.3/markers/n/mark_g.png"
+                        }
+                    ];
+
+                    // 创建信息窗口
+                    var infoWindow = new SimpleInfoWindow({
+                        infoTitle: '<strong style="font-size:16px;">{title}</strong>',
+                        infoBody: '<div style="padding:10px 0;">{content}</div>',
+                        offset: new AMap.Pixel(0, -30),
+                        autoMove: true
+                    });
+
+                    // 存储标记对象
+                    var markers = [];
+
+                    // 为每个非遗点创建标记
+                    heritagePoints.forEach(function (point, index) {
+                        // 创建自定义标记内容
+                        var markerContent = document.createElement('div');
+                        markerContent.className = 'custom-marker';
+                        markerContent.innerHTML = `
+                                <div style="
+                                    background-color: ${point.categoryColor};
+                                    color: white;
+                                    width: 30px;
+                                    height: 30px;
+                                    border-radius: 50%;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    font-weight: bold;
+                                    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+                                    border: 2px solid white;
+                                    cursor: pointer;
+                                ">
+                                    ${index + 1}
+                                </div>
+                            `;
+
+                        // 创建标记
+                        var marker = new AMap.Marker({
+                            position: point.position,
+                            content: markerContent,
+                            title: point.name,
+                            offset: new AMap.Pixel(-15, -15)
+                        });
+
+                        // 添加标记到地图
+                        marker.setMap(map);
+                        markers.push(marker);
+
+                        // 添加点击事件
+                        marker.on('click', function () {
+                            // 更新侧边栏活动项
+                            updateActiveItem(point.id);
+
+                            // 设置信息窗口内容
+                            var infoContent = `
+                                    <div class="info-window">
+                                        <div class="info-title">${point.name}</div>
+                                        <div class="info-category">${point.category}</div>
+                                        <div class="info-description">${point.description}</div>
+                                        <div class="info-location">
+                                            <i>📍</i> 点击右侧列表查看更多详情
+                                        </div>
+                                    </div>
+                                `;
+
+                            infoWindow.setContent(infoContent);
+                            infoWindow.open(map, marker.getPosition());
+
+                            // 地图中心移动到标记位置
+                            map.setCenter(marker.getPosition());
+                            map.setZoom(14);
+                        });
+
+                        // 鼠标悬停效果
+                        marker.on('mouseover', function () {
+                            markerContent.style.transform = 'scale(1.2)';
+                            markerContent.style.transition = 'transform 0.2s';
+                        });
+
+                        marker.on('mouseout', function () {
+                            markerContent.style.transform = 'scale(1)';
+                        });
+                    });
+
+                    // 生成侧边栏列表
+                    var heritageList = document.getElementById('heritage-list');
+                    heritagePoints.forEach(function (point) {
+                        var item = document.createElement('div');
+                        item.className = 'heritage-item';
+                        item.id = 'heritage-item-' + point.id;
+                        item.innerHTML = `
+                                <div class="heritage-name">${point.name}</div>
+                                <div class="heritage-category">${point.category}</div>
+                            `;
+
+                        // 列表项点击事件
+                        item.addEventListener('click', function () {
+                            updateActiveItem(point.id);
+
+                            // 找到对应的标记
+                            var markerIndex = point.id - 1;
+                            if (markers[markerIndex]) {
+                                // 触发标记点击事件
+                                markers[markerIndex].emit('click');
+                            }
+                        });
+
+                        heritageList.appendChild(item);
+                    });
+
+                    // 更新活动项函数
+                    function updateActiveItem(id) {
+                        // 移除所有活动类
+                        document.querySelectorAll('.heritage-item').forEach(function (item) {
+                            item.classList.remove('active');
+                        });
+
+                        // 添加活动类到当前项
+                        var activeItem = document.getElementById('heritage-item-' + id);
+                        if (activeItem) {
+                            activeItem.classList.add('active');
+
+                            // 滚动到活动项
+                            activeItem.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'nearest'
+                            });
+                        }
+                    }
+
+                    // 初始选择第一个项目
+                    if (heritagePoints.length > 0) {
+                        updateActiveItem(1);
+
+                        // 初始显示第一个标记的信息窗口
+                        setTimeout(function () {
+                            markers[0].emit('click');
+                        }, 1000);
+                    }
+
+                    // 添加适应窗口大小变化的事件监听
+                    window.addEventListener('resize', function () {
+                        map.setFitView();
+                    });
+
+                    // 控制台日志
+                    console.log('喀什非遗地图初始化完成！共添加 ' + heritagePoints.length + ' 个非遗点标记。');
+                });
+            }, 500); // 延迟500毫秒
+        };
+    </script>
+</body>
+</html>
